@@ -1,0 +1,22 @@
+services:
+  frontend:
+    command: vue ui -H 0.0.0.0
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    working_dir: /home/dev/workspace/kalender-bokning/
+    privileged: true
+    ports:
+      - 8000:8000
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./frontend/:/home/dev/workspace/kalender-bokning:rw
+  backend:
+    image: php:7.2-apache
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html/
+    ports:
+      - 8081:80
+version: "2.0"
