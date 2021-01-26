@@ -30,9 +30,13 @@
             v-model="value"
             color="primary"
             type="4day"
+            locale="SWE"
             :events="events"
             @contextmenu:event="showEvent"
             :event-color="getEventColor"
+            :interval-minutes="30"
+            :interval-count="48"
+            :interval-height="30"
             :event-ripple="false"
             @change="getEvents"
             @mousedown:event="startDrag"
@@ -41,13 +45,49 @@
             @mouseup:time="endDrag"
             @mouseleave.native="cancelDrag"
           >
-            <template v-slot:event="{ event, timed, eventSummary }">
-              <div class="v-event-draggable" v-html="eventSummary()"></div>
-              <div
-                v-if="timed"
-                class="v-event-drag-bottom"
-                @mousedown.stop="extendBottom(event)"
-              ></div>
+            <!--<template v-slot:day="{ past, date }">
+              <v-row class="fill-height">
+                <template v-if="past && tracked[date]">
+                  <v-sheet
+                    v-for="(percent, i) in tracked[date]"
+                    :key="i"
+                    :title="category[i]"
+                    :color="colors[i]"
+                    :width="`${percent}%`"
+                    height="100%"
+                    tile
+                  ></v-sheet>
+                </template>
+              </v-row>
+            </template>-->
+            <template v-slot:day-label-header="{ day, present }">
+              <v-row>
+                <v-col
+                  :style="{
+                    color: present ? 'blue' : 'black',
+                    'font-weight': present ? 'bold' : 'normal',
+                  }"
+                >
+                  {{ day }}
+                </v-col>
+              </v-row>
+            </template>
+            <template v-slot:interval="{ date, time, past }">
+              <v-row class="fill-height">
+                <template
+                  v-if="!eventSlots.includes(date + 'T' + time) || past"
+                >
+                  <v-col>
+                    <v-sheet
+                      title="Test"
+                      color="#eee"
+                      width="100%"
+                      height="29px"
+                      style="margin-top: -12px"
+                    ></v-sheet>
+                  </v-col>
+                </template>
+              </v-row>
             </template>
           </v-calendar>
         </v-sheet>
@@ -77,17 +117,24 @@ export default {
     },
     customAttrs: {
       default: () => ({})
+    },
+    minDuration: {
+      type: Number,
+      default: () => 30 * 60 * 1000
+    },
+    maxDuration: {
+      type: Number,
+      default: () => 60 * 60 * 1000
     }
   },
   data () {
     return {
-      minDuration: 30 * 60 * 1000,
-      maxDuration: 60 * 60 * 1000,
       value: '',
       showAlert: false,
       activeEvent: null,
       events: [],
       newEvents: [],
+      eventSlots: [],
       colors: [
         '#2196F3',
         '#3F51B5',
@@ -128,9 +175,9 @@ export default {
     },
     removeEvent () {
       if (this.canModify(this.activeEvent)) {
-        this.hideEvent()
         const idx = this.events.indexOf(this.activeEvent)
         this.events.splice(idx, 1)
+        this.hideEvent()
       }
     },
     startDrag ({ event, timed }) {
@@ -268,11 +315,20 @@ export default {
         end,
         timed,
       } */
-      let url = window.location.href.split('#')[0]
+      let url = window.location.href.split('#')[0].split('?')[0]
+      this.getEventSlots({ end, start })
       axios
         .get(`${url}?start=${start.date}&end=${end.date}&action=events`)
         .then((e) => {
-          this.events = e.data
+          if (e.data instanceof Array) this.events = e.data
+        })
+    },
+    getEventSlots ({ start, end }) {
+      let url = window.location.href.split('#')[0].split('?')[0]
+      axios
+        .get(`${url}?start=${start.date}&end=${end.date}&action=eventslots`)
+        .then((e) => {
+          if (e.data instanceof Array) this.eventSlots = e.data
         })
     },
     rnd (a, b) {

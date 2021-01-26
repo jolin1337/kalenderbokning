@@ -26,7 +26,7 @@
 <script>
 import axios from 'axios'
 import Vue from 'vue'
-import calendar from '@/components/Calendar'
+import calendar from '@/components/CalendarBooking'
 
 export default {
   components: {
@@ -46,7 +46,7 @@ export default {
       return { email: this.email }
     },
     url () {
-      return window.location.href.split('#')[0]
+      return window.location.href.split('#')[0].split('?')[0]
     }
   },
   methods: {

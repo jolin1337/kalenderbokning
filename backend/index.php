@@ -19,7 +19,7 @@ function is_loggedin() {
     }
     return $is_loggedin_called;
 }
-
+date_default_timezone_set('Europe/Stockholm');
 if (isset($_POST['action'])) {
     switch($_POST['action']) {
         case 'login':
@@ -56,6 +56,45 @@ if (isset($_POST['action'])) {
                 }
                 if ($found_event === false) {
                     $allEvents[] = $newEvent;
+                }
+                $eventslots_file = path(__DIR__, 'eventslots.txt');
+                $eventSlots = explode("\n", file_get_contents($eventslots_file));
+                $valid_slot = false;
+                $slot_interval = 30 * 60 * 1000;
+                for ($i=0; $i < count($eventSlots); $i++) {
+                    $slot1 = strtotime($eventSlots[$i]) * 1000;
+                    if ($slot1 <= intval($newEvent['start'])) {
+                        while(true) {
+                            //var_dump("end", (new DateTime('@' . (intval($newEvent['end'])/1000)))->format('Y-m-dTH:i:s'));
+                            //var_dump("start", (new DateTime('@' . (intval($newEvent['start'])/1000)))->format('Y-m-dTH:i:s'));
+                            //var_dump("slot", (new DateTime('@' . (($slot1)/1000)))->format('Y-m-dTH:i:s'));
+                            //var_dump("slot + interval", (new DateTime('@' . (($slot1 + $slot_interval)/1000)))->format('Y-m-dTH:i:s'));
+                            ////var_dump(((new DateTime('@' . (($slot1 + $slot_interval)/1000)))->format('Y-m-dTH:i:s')) . '+' . $slot_interval . '>=' . ((new DateTime('@' . (intval($newEvent['end'])/1000)))->format('Y-m-dTH:i:s')));
+                            if ($slot1 + $slot_interval >= intval($newEvent['end'])) {
+                                $valid_slot = true;
+                                break;
+                            }
+                            $found_next_slot = false;
+                            for ($j=0; $j < count($eventSlots); $j++) {
+                                $slot2 = strtotime($eventSlots[$j]) * 1000;
+                                if ($slot1 + $slot_interval === $slot2) {
+                                    //var_dump($slot1 . '<=' . intval($newEvent['end']) . '&&' . ($slot1 + $slot_interval) . '>=' . intval($newEvent['start']));
+                                    $found_next_slot = true;
+                                }
+                            }
+                            if ($found_next_slot === true) {
+                                $slot1 = $slot1 + $slot_interval;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+                if ($valid_slot === false) {
+                    echo json_encode(array(
+                        'error' => 'Not within a timeslot'
+                    ));
+                    exit();
                 }
                 file_put_contents($event_file, json_encode($allEvents));
                 echo json_encode(array('success' => 'added/updated event for ' . $email));
@@ -99,13 +138,35 @@ if (isset($_GET['action'])) {
             }
             break;
         case 'events':
-            $event_file = path(__DIR__, 'events.json');
-            $start = strtotime($_GET['start']) * 1000;
-            $end = strtotime($_GET['end']) * 1000;
-            $allEvents = json_decode(file_get_contents($event_file), true);
-            echo json_encode(array_filter($allEvents, function ($event) use ($start, $end) {
-                return intval($event['start']) >= $start && intval($event['end']) <= $end + 24 * 60 * 60 * 1000;
-            }));
+            $email = is_loggedin();
+            if ($email !== false) {
+                $event_file = path(__DIR__, 'events.json');
+                $start = strtotime($_GET['start']) * 1000;
+                $end = strtotime($_GET['end']) * 1000;
+                $allEvents = json_decode(file_get_contents($event_file), true);
+                echo json_encode(array_map(function($event) {
+                    if ($event['email'] !== $email) $event['name'] = 'Bokad';
+                    return $event;
+                }, array_filter($allEvents, function ($event) use ($start, $end) {
+                    return intval($event['start']) >= time() && intval($event['start']) >= $start && intval($event['end']) <= $end + 24 * 60 * 60 * 1000;
+                })));
+            } else {
+                echo json_encode(array('error' => 'not logged in'));
+            }
+            break;
+        case 'eventslots':
+            $email = is_loggedin();
+            if ($email !== false) {
+                $eventslots_file = path(__DIR__, 'eventslots.txt');
+                $start = strtotime($_GET['start']);
+                $end = strtotime($_GET['end']);
+                $eventSlots = explode("\n", file_get_contents($eventslots_file));
+                echo json_encode(array_filter($eventSlots, function ($slot) use ($start, $end) {
+                    return strtotime($slot) >= time() && strtotime($slot) >= $start && strtotime($slot) <= $end + 24 * 60 * 60 * 1000;
+                }));
+            } else {
+                echo json_encode(array('error' => 'not logged in'));
+            }
             break;
     }
     exit();

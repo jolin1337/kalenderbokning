@@ -58,7 +58,7 @@ export default {
         bodyFormData.append('email', this.email)
         bodyFormData.append('pwd', this.password)
         bodyFormData.append('action', 'login')
-        let url = window.location.href.split('#')[0]
+        let url = window.location.href.split('#')[0].split('?')[0]
         axios
           .post(url, bodyFormData)
           .then(() => {
