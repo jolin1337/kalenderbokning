@@ -35,7 +35,7 @@ export default {
   data () {
     return {
       email: null,
-      msg: 'Välj en tid att boka möte',
+      msg: 'Välj en tid att boka samtal',
       valid: false,
       eventsLoaded: false,
       date: ''
