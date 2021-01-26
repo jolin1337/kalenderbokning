@@ -40,7 +40,7 @@ import axios from 'axios'
 export default {
   data () {
     return {
-      msg: 'Logga in för att boka',
+      msg: 'Logga in för att boka samtal',
       valid: false,
       email: '',
       password: '',
