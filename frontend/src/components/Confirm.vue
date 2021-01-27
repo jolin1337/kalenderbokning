@@ -1,13 +1,13 @@
 <template>
-  <v-form v-model="valid" ref="form" lazy-validation>
+  <v-form ref="form" lazy-validation>
     <v-container>
       <v-row>
-        <v-col> Din bokning blev godkänd! </v-col>
+        <v-col> {{ $locale.confirm_title }} </v-col>
       </v-row>
       <v-row>
         <v-col>
           <v-btn class="mr-4">
-            <router-link to="/">Tillbaka till kalendern</router-link>
+            <router-link to="/">{{ $locale.confirm_backButton }}</router-link>
           </v-btn>
         </v-col>
       </v-row>

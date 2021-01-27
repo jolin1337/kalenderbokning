@@ -22,13 +22,13 @@
                 <v-row>
                     <v-col>
                         <v-btn v-if="!booked && isAdmin" class="mr-4" @click.stop.prevent="$emit('remove')">
-                            Ta bort
+                            {{$locale.timeSlot_removeButton}}
                         </v-btn>
                         <v-btn v-if="!isOwner" class="mr-4" @click.stop.prevent="$emit('book')">
-                            Boka!
+                            {{$locale.timeSlot_bookButton}}
                         </v-btn>
                         <v-btn v-else class="mr-4" @click.stop.prevent="$emit('cancel')">
-                            Avboka
+                            {{$locale.timeSlot_cancelButton}}
                         </v-btn>
                     </v-col>
                 </v-row>

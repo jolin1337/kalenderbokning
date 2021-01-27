@@ -34,7 +34,7 @@
                                 color="grey"
                                 @click="$emit('close')"
                             >
-                            Sträng ruta
+                            {{$locale.alert_closeButton}}
                             </v-btn>
                         </v-col>
                     </v-row>

@@ -4,12 +4,12 @@
       <v-row>
         <v-col cols="12" md="2"></v-col>
         <v-col md="8">
-          <h1>{{ msg }}</h1>
+          <h1>{{ $locale.home_title }}</h1>
           <v-timeline :dense="$vuetify.breakpoint.smAndDown">
-            <v-sheet @click="newSlot = {}">
+            <v-sheet v-if="isAdmin" @click="newSlot = {}">
               <v-timeline-item icon="mdi-plus" color="green lighten-0" class="text-left">
                 <h3 class="font-weight-light" style="margin-top: 10px;color: grey">
-                  Lägg till ny tid
+                  {{$locale.home_addNewSlotButton}}
                 </h3>
               </v-timeline-item>
             </v-sheet>
@@ -23,10 +23,10 @@
                 :is-owner="(checkBooked(slot) || {}).email === email"
                 :selected="activeEvent.toString() === slot.toString()" :time="slot" />
             </v-sheet>
-            <v-sheet @click="newSlot = {}">
+            <v-sheet v-if="isAdmin" @click="newSlot = {}">
               <v-timeline-item icon="mdi-plus" color="green lighten-0" class="text-left">
                 <h3 class="font-weight-light" style="margin-top: 10px;color: grey">
-                  Lägg till ny tid
+                  {{$locale.home_addNewSlotButton}}
                 </h3>
               </v-timeline-item>
             </v-sheet>
@@ -36,19 +36,20 @@
       </v-row>
     </v-container>
 
-    <alert :show="!!errorMsg" title="Ett fel inträffade" color="red" @close="errorMsg = ''" :alert-msg="errorMsg"></alert>
+    <alert :show="!!errorMsg" :title="$locale.home_errorTitle" color="red" @close="errorMsg = ''" :alert-msg="errorMsg"></alert>
     <alert
       color="blue"
       v-if="!!newSlot"
-      title="Lägg till ett bokningstillfälle" 
+      :title="$locale.home_addSlotTitle" 
       @close="newSlot = false" 
-      alert-msg="Välj tid och datum för det nya bokningstillfället">
+      :alert-msg="$locale.home_addSlotSubTitle">
       <template v-slot:content  >
           <v-container>
             <v-row>
               <v-col>
                 <v-date-picker class="theme--light"
                   color="green lighten-1"
+                  locale="swe"
                   v-model="newSlot.date"></v-date-picker>
               </v-col>
               <v-col>
@@ -68,7 +69,7 @@
             color="teal"
             @click="addSlot()"
         >
-        Lägg till
+        {{$locale.home_addSlotButton}}
         </v-btn>
       </template>
     </alert>
@@ -89,7 +90,6 @@ export default {
     return {
       email: null,
       isAdmin: false,
-      msg: 'Välj en tid att boka samtal',
       errorMsg: '',
       newSlot: false,
       valid: false,
@@ -132,7 +132,7 @@ export default {
               this.$router.push('/confirm')
             } else {
               this.showAlert = true
-              this.errorMsg = 'Du kunde inte utföra din bokning på denna tiden, anledning: ' + e.data.error
+              this.errorMsg = this.$locale.home_unableToAddEventError + e.data.error
             }
           })
           .catch((e) => {
@@ -152,7 +152,7 @@ export default {
               this.$router.push('/confirm')
             } else {
               this.showAlert = true
-              this.errorMsg = 'Du kunde inte utföra borttagning av tiden, anledning: ' + e.data.error
+              this.errorMsg = this.$locale.home_unableToRemoveSlotError + e.data.error
             }
           })
       }
@@ -171,7 +171,7 @@ export default {
               this.$router.push('/confirm')
             } else {
               this.showAlert = true
-              this.errorMsg = 'Du kunde inte lägga till den nya bokningsbara tiden, anledning: ' + e.data.error
+              this.errorMsg = this.$locale.home_unableToAddSlotError + e.data.error
             }
           })
       }

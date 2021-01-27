@@ -3,12 +3,12 @@
     <v-container>
       <v-row>
         <v-col>
-          <h1>{{ msg }}</h1>
+          <h1>{{ $locale.login_title }}</h1>
           <v-text-field
             v-model="email"
             :rules="emailRules"
             :counter="30"
-            label="E-post"
+            :label="$locale.login_email"
             required
           ></v-text-field>
         </v-col>
@@ -19,7 +19,7 @@
             v-model="password"
             type="password"
             :rules="passwordRules"
-            label="Lösenord"
+            :label="$locale.login_password"
             required
           ></v-text-field>
         </v-col>
@@ -27,7 +27,7 @@
       <v-row>
         <v-col>
           <v-btn :disabled="!valid" class="mr-4" @click="validate">
-            Logga in
+            {{$locale.login_loginButton}}
           </v-btn>
         </v-col>
       </v-row>
@@ -40,15 +40,14 @@ import axios from 'axios'
 export default {
   data () {
     return {
-      msg: 'Logga in för att boka samtal',
       valid: false,
       email: '',
       password: '',
       emailRules: [
-        (v) => !!v || 'E-mail is required',
-        (v) => /.+@.+/.test(v) || 'E-mail måste vara korrekt'
+        (v) => !!v || this.$locale.login_emailRules_emailRequired1,
+        (v) => /.+@.+/.test(v) || this.$locale.login_emailRules_emailRequired2
       ],
-      passwordRules: [(v) => !!v || 'Lösenord krävs för att logga in']
+      passwordRules: [(v) => !!v || this.$locale.login_emailRules_passwordRequired]
     }
   },
   computed: {

@@ -3,9 +3,11 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
-import vuetify from '@/plugins/vuetify' // path to vuetify export
+import vuetify from '@/plugins/vuetify'
+import locales from '@/plugins/locales'
 
 Vue.config.productionTip = false
+Vue.use(locales)
 
 /* eslint-disable no-new */
 new Vue({
