@@ -51,6 +51,14 @@ export default {
       passwordRules: [(v) => !!v || 'Lösenord krävs för att logga in']
     }
   },
+  computed: {
+    url () {
+      let url = window.location.href.split('#')[0].split('?')[0]
+      if (url.endsWith('index.php')) url = url.replace('index.php', '')
+      if (url.endsWith('index.html')) url = url.replace('index.html', '')
+      return url + 'api.php'
+    }
+  },
   methods: {
     validate () {
       if (this.$refs.form.validate() && this.valid) {
@@ -58,9 +66,8 @@ export default {
         bodyFormData.append('email', this.email)
         bodyFormData.append('pwd', this.password)
         bodyFormData.append('action', 'login')
-        let url = window.location.href.split('#')[0].split('?')[0]
         axios
-          .post(url, bodyFormData)
+          .post(this.url, bodyFormData)
           .then(() => {
             this.$router.push('/')
           })
