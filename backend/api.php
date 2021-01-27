@@ -19,6 +19,89 @@ function is_loggedin() {
     }
     return $is_loggedin_called;
 }
+function is_admin() {
+    $email = is_loggedin();
+    if ($email !== false) {
+        $admins = explode("\n", file_get_contents(path(__DIR__, 'admins.txt')));
+        return in_array($email, $admins);
+    }
+}
+
+function sendIcalEvent($from_name, $from_address, $to_name, $to_address, $startTime, $endTime, $subject, $description, $location)
+{
+    $domain = 'godesity.se';
+
+    //Create Email Headers
+    $mime_boundary = "----Meeting Booking----".MD5(TIME());
+
+    $headers = "From: ".$from_name." <".$from_address.">\n";
+    $headers .= "Reply-To: ".$from_name." <".$from_address.">\n";
+    $headers .= "MIME-Version: 1.0\n";
+    $headers .= "Content-Type: multipart/alternative; boundary=\"$mime_boundary\"\n";
+    $headers .= "Content-class: urn:content-classes:calendarmessage\n";
+
+    //Create Email Body (HTML)
+    $message = "--$mime_boundary\r\n";
+    $message .= "Content-Type: text/html; charset=UTF-8\n";
+    $message .= "Content-Transfer-Encoding: 8bit\n\n";
+    $message .= "<html>\n";
+    $message .= "<body>\n";
+    $message .= '<p>Hej '.$to_name.',</p>';
+    $message .= '<p>'.$description.'</p>';
+    $message .= "</body>\n";
+    $message .= "</html>\n";
+    $message .= "--$mime_boundary\r\n";
+
+    $ical = 'BEGIN:VCALENDAR' . "\r\n" .
+    'PRODID:-//Microsoft Corporation//Outlook 10.0 MIMEDIR//EN' . "\r\n" .
+    'VERSION:2.0' . "\r\n" .
+    'METHOD:REQUEST' . "\r\n" .
+    'BEGIN:VTIMEZONE' . "\r\n" .
+    'TZID:Eastern Time' . "\r\n" .
+    'BEGIN:STANDARD' . "\r\n" .
+    'DTSTART:20091101T020000' . "\r\n" .
+    'RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=1SU;BYMONTH=11' . "\r\n" .
+    'TZOFFSETFROM:-0400' . "\r\n" .
+    'TZOFFSETTO:-0500' . "\r\n" .
+    'TZNAME:EST' . "\r\n" .
+    'END:STANDARD' . "\r\n" .
+    'BEGIN:DAYLIGHT' . "\r\n" .
+    'DTSTART:20090301T020000' . "\r\n" .
+    'RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=2SU;BYMONTH=3' . "\r\n" .
+    'TZOFFSETFROM:-0500' . "\r\n" .
+    'TZOFFSETTO:-0400' . "\r\n" .
+    'TZNAME:EDST' . "\r\n" .
+    'END:DAYLIGHT' . "\r\n" .
+    'END:VTIMEZONE' . "\r\n" .
+    'BEGIN:VEVENT' . "\r\n" .
+    'ORGANIZER;CN="'.$from_name.'":MAILTO:'.$from_address. "\r\n" .
+    'ATTENDEE;CN="'.$to_name.'";ROLE=REQ-PARTICIPANT;RSVP=TRUE:MAILTO:'.$to_address. "\r\n" .
+    'LAST-MODIFIED:' . date("Ymd\TGis") . "\r\n" .
+    'UID:'.date("Ymd\TGis", strtotime($startTime)).rand()."@".$domain."\r\n" .
+    'DTSTAMP:'.date("Ymd\TGis"). "\r\n" .
+    'DTSTART;TZID="Eastern Time":'.date("Ymd\THis", strtotime($startTime)). "\r\n" .
+    'DTEND;TZID="Eastern Time":'.date("Ymd\THis", strtotime($endTime)). "\r\n" .
+    'TRANSP:OPAQUE'. "\r\n" .
+    'SEQUENCE:1'. "\r\n" .
+    'SUMMARY:' . $subject . "\r\n" .
+    'LOCATION:' . $location . "\r\n" .
+    'CLASS:PUBLIC'. "\r\n" .
+    'PRIORITY:5'. "\r\n" .
+    'BEGIN:VALARM' . "\r\n" .
+    'TRIGGER:-PT15M' . "\r\n" .
+    'ACTION:DISPLAY' . "\r\n" .
+    'DESCRIPTION:Reminder' . "\r\n" .
+    'END:VALARM' . "\r\n" .
+    'END:VEVENT'. "\r\n" .
+    'END:VCALENDAR'. "\r\n";
+    $message .= 'Content-Type: text/calendar;name="meeting.ics";method=REQUEST'."\n";
+    $message .= "Content-Transfer-Encoding: 8bit\n\n";
+    $message .= $ical;
+
+    $mailsent = mail($to_address, $subject, $message, $headers);
+
+    return ($mailsent)?(true):(false);
+}
 date_default_timezone_set('Europe/Stockholm');
 if (isset($_POST['action'])) {
     switch($_POST['action']) {
@@ -90,8 +173,31 @@ if (isset($_POST['action'])) {
                     ));
                     exit();
                 }
+
+                $subject = "Samtal har blivit inbokat";
+                $admin_email = explode("\n", file_get_contents(path(__DIR__, 'admins.txt')))[0];
+                $to_name = explode('@', $admin_email)[0];
+                $from_name = explode('@', $email)[0];
+                $from_address = $admin_email;
+                $to_address = $admin_email;
+                $start = new DateTime();
+                $start->setTimestamp(intdiv($newEvent['start'], 1000));
+                $end = new DateTime();
+                $end->setTimestamp(intdiv($newEvent['end'], 1000));
+                $date = date_format($start, "Y-m-d");
+                $time_start = date_format($start, 'H:i:s');
+                $time_end = date_format($end, 'H:i:s');
+                $startTime = "$date $time_start";
+                $endTime = "$date $time_end";
+                $description = "$email har bokat upp dig för ett samtal mellan $time_start och $time_end, $date";
+                $location = "Setup yourself as you please!!!";
+                sendIcalEvent($from_name, $from_address, $to_name, $to_address, $startTime, $endTime, $subject, $description, $location);
                 file_put_contents($event_file, json_encode($allEvents));
-                echo json_encode(array('success' => 'added/updated event for ' . $email));
+                if ($found_event) {
+                    echo json_encode(array('success' => 'updated event for ' . $email));
+                } else {
+                    echo json_encode(array('success' => 'added event for ' . $email));
+                }
             } else {
                 echo json_encode(array('error' => 'not logged in'));
             }
@@ -112,6 +218,30 @@ if (isset($_POST['action'])) {
                 echo json_encode(array('error' => 'not logged in'));
             }
             break;
+        case 'addTimeslots':
+            if (is_admin()) {
+                $slot_path = path(__DIR__, 'eventslots.txt');
+                $new_timeslots = json_decode($_POST['timeslots']);
+                $timeslots = array_unique(array_merge($new_timeslots, explode("\n", file_get_contents($slot_path))));
+                file_put_contents($slot_path, implode("\n", $timeslots));
+                echo json_encode(array('success' => 'added event time'));
+            } else {
+                echo json_encode(array('error' => 'not admin'));
+            }
+            break;
+        case 'removeTimeslots':
+            if (is_admin()) {
+                $slot_path = path(__DIR__, 'eventslots.txt');
+                $new_timeslots = json_decode($_POST['timeslots']);
+                $timeslots = array_diff(explode("\n", file_get_contents($slot_path)), $new_timeslots);
+                var_dump($new_timeslots);
+                var_dump($timeslots);
+                file_put_contents($slot_path, implode("\n", $timeslots));
+                echo json_encode(array('success' => 'removed event time'));
+            } else {
+                echo json_encode(array('error' => 'not admin'));
+            }
+            break;
     }
     exit();
 }
@@ -122,11 +252,13 @@ if (isset($_GET['action'])) {
             if ($email !== false) {
                 echo json_encode(array(
                     'email' => $email,
+                    'admin' => is_admin(),
                     'loggedin' => true
                 ));
             } else {
                 echo json_encode(array(
                     'email' => $email,
+                    'admin' => false,
                     'loggedin' => false
                 ));
             }

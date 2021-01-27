@@ -6,13 +6,29 @@
         <v-col md="8">
           <h1>{{ msg }}</h1>
           <v-timeline :dense="$vuetify.breakpoint.smAndDown">
+            <v-sheet @click="newSlot = {}">
+              <v-timeline-item icon="mdi-plus" color="green lighten-0" class="text-left">
+                <h3 class="font-weight-light" style="margin-top: 10px;color: grey">
+                  Lägg till ny tid
+                </h3>
+              </v-timeline-item>
+            </v-sheet>
             <v-sheet v-for="(slot, key) in eventSlots"  @click="selectTime(slot)" :key="key">
               <time-slot 
                 @book="validate('addEvent')"
                 @cancel="validate('deleteEvent')"
-                :booked="!!checkBooked(slot)" 
+                @remove="removeSlot(slot)"
+                :booked="!!checkBooked(slot)"
+                :is-admin="isAdmin"
                 :is-owner="(checkBooked(slot) || {}).email === email"
                 :selected="activeEvent.toString() === slot.toString()" :time="slot" />
+            </v-sheet>
+            <v-sheet @click="newSlot = {}">
+              <v-timeline-item icon="mdi-plus" color="green lighten-0" class="text-left">
+                <h3 class="font-weight-light" style="margin-top: 10px;color: grey">
+                  Lägg till ny tid
+                </h3>
+              </v-timeline-item>
             </v-sheet>
           </v-timeline>
         </v-col>
@@ -20,50 +36,62 @@
       </v-row>
     </v-container>
 
-    <v-overlay
-      :z-index="10"
-      :value="alert"
-    >
-      <v-card color="red lighten-1" class="mx-auto">
-        <v-card-title class="title">
-          <h2 class="white--text font-weight-light">
-            Ett fel inträffade
-          </h2>
-        </v-card-title>
-        <v-card-text class="white text--primary">
-          <br/>
-          <h2 class="font-weight-light">
-              <p>{{alertMsg}}</p>
-          </h2>
-        </v-card-text>
-        <v-card-text class="white text--primary">
-              <v-btn
-                class="white--text"
-                color="teal"
-                @click="alert = false"
-              >
-                Sträng ruta
-              </v-btn>
-        </v-card-text>
-      </v-card>
-    </v-overlay>
+    <alert :show="!!errorMsg" title="Ett fel inträffade" color="red" @close="errorMsg = ''" :alert-msg="errorMsg"></alert>
+    <alert
+      color="blue"
+      v-if="!!newSlot"
+      title="Lägg till ett bokningstillfälle" 
+      @close="newSlot = false" 
+      alert-msg="Välj tid och datum för det nya bokningstillfället">
+      <template v-slot:content  >
+          <v-container>
+            <v-row>
+              <v-col>
+                <v-date-picker class="theme--light"
+                  color="green lighten-1"
+                  v-model="newSlot.date"></v-date-picker>
+              </v-col>
+              <v-col>
+                <v-time-picker
+                  color="green lighten-1"
+                  v-model="newSlot.time"
+                  :allowed-minutes="(m) => m % 5 === 0"
+                  format="24hr"
+                ></v-time-picker>
+              </v-col>
+            </v-row>
+          </v-container>
+      </template>
+      <template v-slot:buttons>
+        <v-btn
+            class="white--text"
+            color="teal"
+            @click="addSlot()"
+        >
+        Lägg till
+        </v-btn>
+      </template>
+    </alert>
   </v-form>
 </template>
 
 <script>
 import axios from 'axios'
 import TimeSlot from './TimeSlot.vue'
+import Alert from './Alert.vue'
 
 export default {
   components: {
-    TimeSlot
+    TimeSlot,
+    Alert
   },
   data () {
     return {
       email: null,
+      isAdmin: false,
       msg: 'Välj en tid att boka samtal',
-      alert: false,
-      alertMsg: '',
+      errorMsg: '',
+      newSlot: false,
       valid: false,
       eventsLoaded: false,
       eventSlots: [],
@@ -103,12 +131,48 @@ export default {
             if (!e.data.error) {
               this.$router.push('/confirm')
             } else {
-              this.alert = true
-              this.alertMsg = 'Du kunde inte utföra din bokning på denna tiden, anledning: ' + e.data.error
+              this.showAlert = true
+              this.errorMsg = 'Du kunde inte utföra din bokning på denna tiden, anledning: ' + e.data.error
             }
           })
           .catch((e) => {
             console.error(e)
+          })
+      }
+    },
+    removeSlot (slot) {
+      if (this.isAdmin && !this.checkBooked(slot)) {
+        let data = new FormData()
+        data.append('timeslots', JSON.stringify([slot]))
+        data.append('action', 'removeTimeslots')
+        axios
+          .post(this.url, data)
+          .then(e => {
+            if (!e.data.error) {
+              this.$router.push('/confirm')
+            } else {
+              this.showAlert = true
+              this.errorMsg = 'Du kunde inte utföra borttagning av tiden, anledning: ' + e.data.error
+            }
+          })
+      }
+    },
+    addSlot () {
+      if (this.newSlot.date && this.newSlot.time && this.isAdmin) {
+        let data = new FormData()
+        const slot = this.newSlot.date + 'T' + this.newSlot.time + ':00.000Z'
+        data.append('timeslots', JSON.stringify([slot]))
+        data.append('action', 'addTimeslots')
+        axios
+          .post(this.url, data)
+          .then(e => {
+            this.newSlot = false
+            if (!e.data.error) {
+              this.$router.push('/confirm')
+            } else {
+              this.showAlert = true
+              this.errorMsg = 'Du kunde inte lägga till den nya bokningsbara tiden, anledning: ' + e.data.error
+            }
           })
       }
     },
@@ -162,9 +226,11 @@ export default {
       .get(`${this.url}/?action=loggedin`)
       .then((r) => {
         this.email = r.data.email
+        this.isAdmin = r.data.admin
         this.eventsLoaded = true
         if (r.data.loggedin === false) {
           this.$router.push('/login')
+          throw Error("Not admin in")
         }
       })
       .then(() => this.getEventSlots({

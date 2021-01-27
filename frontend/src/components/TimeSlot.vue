@@ -21,6 +21,9 @@
             <v-container v-show="selected">
                 <v-row>
                     <v-col>
+                        <v-btn v-if="!booked && isAdmin" class="mr-4" @click.stop.prevent="$emit('remove')">
+                            Ta bort
+                        </v-btn>
                         <v-btn v-if="!isOwner" class="mr-4" @click.stop.prevent="$emit('book')">
                             Boka!
                         </v-btn>
@@ -41,7 +44,8 @@ export default {
         time: Date,
         booked: Boolean,
         selected: Boolean,
-        isOwner: Boolean
+        isOwner: Boolean,
+        isAdmin: Boolean
     },
     computed: {
         date () {
