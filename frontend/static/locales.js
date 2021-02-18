@@ -1,5 +1,3 @@
-console.log("hdjshdjkahsjk")
-
 window.defaultLocale = {
     login_title: 'Logga in för att boka samtal',
     login_email: 'E-post',
@@ -26,5 +24,7 @@ window.defaultLocale = {
     home_unableToAddSlotError: 'Du kunde inte lägga till den nya bokningsbara tiden, anledning: ',
     home_addSlotTitle: 'Lägg till ett bokningstillfälle',
     home_addSlotSubTitle: 'Välj tid och datum för det nya bokningstillfället',
-    home_addSlotButton: 'Lägg till'
+    home_addSlotButton: 'Lägg till',
+
+    bookableDaysForward: 14
 }

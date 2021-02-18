@@ -1,35 +1,49 @@
 <template>
-  <v-timeline-item :color="color + ' lighten-1'" fill-dot :small="!selected" :right="!booked || isOwner" :left="booked && !isOwner">
-    <v-card :color="color + ' lighten-2'" class="mx-auto">
-        <v-card-title class="title justify-end" v-if="booked && !isOwner">
-            <h2 class="white--text font-weight-light">
-                {{date}}
-            </h2>
-            <v-icon dark size="42" class="mr-4"> mdi-calendar-clock </v-icon> 
-            <h3 class="white--text font-weight-light">
-                {{timeStart}} - {{timeEnd}}
-            </h3>
+  <v-timeline-item :color="color" fill-dot :small="!selected"> <!--:right="!booked || isOwner" :left="booked && !isOwner">-->
+    <v-card :color="color" class="mx-auto">
+        <v-card-title class="title" v-if="booked && !isOwner">
+            <v-container class="time-card">
+                <v-row>
+                    <v-col cols="12" md="12">
+                        <h2 class="white--text font-weight-light">
+                            <v-icon dark size="42" class="mr-4"> mdi-calendar-clock </v-icon>
+                            {{date}}
+                        </h2>
+                        <h3 class="white--text font-weight-light">
+                            {{timeStart}} - {{timeEnd}}
+                        </h3>
+                    </v-col>
+                </v-row>
+            </v-container>
         </v-card-title>
         <v-card-title class="title" v-else>
-            <v-icon dark size="42" class="mr-4"> mdi-calendar-clock </v-icon> 
-            <h2 class="white--text font-weight-light">
-                {{date}}
-            </h2>
-            <h3 class="white--text font-weight-light">
-                {{timeStart}} - {{timeEnd}}
-            </h3>
-            <v-container v-show="selected">
+            <v-container class="time-card">
                 <v-row>
-                    <v-col>
-                        <v-btn v-if="!booked && isAdmin" class="mr-4" @click.stop.prevent="$emit('remove')">
-                            {{$locale.timeSlot_removeButton}}
-                        </v-btn>
-                        <v-btn v-if="!isOwner" class="mr-4" @click.stop.prevent="$emit('book')">
-                            {{$locale.timeSlot_bookButton}}
-                        </v-btn>
-                        <v-btn v-else class="mr-4" @click.stop.prevent="$emit('cancel')">
-                            {{$locale.timeSlot_cancelButton}}
-                        </v-btn>
+                    <v-col cols="12" md="12">
+                        <h2 class="white--text font-weight-light">
+                            <v-icon dark size="42" class="mr-4"> mdi-calendar-clock </v-icon>
+                            {{date}}
+                        </h2>
+                        <h3 class="white--text font-weight-light">
+                            {{timeStart}} - {{timeEnd}}
+                        </h3>
+                        <v-container v-show="selected">
+                            <v-row>
+                                <v-col>
+                                    <p>
+                                    <v-btn v-if="!booked && isAdmin" class="mr-4" @click.stop.prevent="$emit('remove')">
+                                        {{$locale.timeSlot_removeButton}}
+                                    </v-btn>
+                                    </p>
+                                    <v-btn v-if="!isOwner" class="mr-4" @click.stop.prevent="$emit('book')">
+                                        {{$locale.timeSlot_bookButton}}
+                                    </v-btn>
+                                    <v-btn v-else class="mr-4" @click.stop.prevent="$emit('cancel')">
+                                        {{$locale.timeSlot_cancelButton}}
+                                    </v-btn>
+                                </v-col>
+                            </v-row>
+                        </v-container>
                     </v-col>
                 </v-row>
             </v-container>
@@ -45,7 +59,13 @@ export default {
         booked: Boolean,
         selected: Boolean,
         isOwner: Boolean,
-        isAdmin: Boolean
+        isAdmin: Boolean,
+        emailColor: {
+            default () {
+                return 'blue'
+            },
+            type: String
+        }
     },
     computed: {
         date () {
@@ -62,15 +82,15 @@ export default {
         },
         color () {
             if (this.selected) {
-                return 'purple'
+                return 'purple lighten-2'
             }
             if (this.isOwner) {
-                return 'green'
+                return 'green lighten-2'
             }
             if (this.booked) {
-                return 'grey'
+                return 'grey lighten-2'
             }
-            return 'blue'
+            return this.emailColor
         }
     }
 }
@@ -92,5 +112,9 @@ li {
 }
 a {
   color: #42b983;
+}
+.time-card {
+    text-align: left;
+    padding: 0;
 }
 </style>

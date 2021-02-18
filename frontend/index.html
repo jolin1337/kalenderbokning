@@ -8,11 +8,90 @@
   <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
   <script src="static/locales.js" type="application/javascript"></script>
+  <link href="static/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .v-application--wrap {
+      min-height: auto !important;
+    }
+    .v-main__wrap, .v-application--wrap {
+      position: initial !important;
+    }
+    .main {
+      position: relative;
+    }
+    .vagledning {
+      text-align: center;
+    }
+    footer {
+      text-align: center;
+    }
+  </style>
 </head>
 
 <body>
-  <div id="app"></div>
-  <!-- built files will be auto injected -->
+  <main>
+    <div class="container">
+      <header>
+        <h2>Retreat 5-6</h2>
+        <h1>Tema: Trygghet i GUD</h1>
+        <p>Retreatledare: Niklas Lindén tel XXX epost: XXX</p>
+        <p>Retreatledare: Eva Olsson tel XXX epost: XXX</p>
+      </header>
+      <div class="row mb-3 main">
+        <div class="col-sm-5 themed-grid-col">
+          <h2>Schema</h2>
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Fredag</th>
+                <th scope="row">Aktivitet</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td scope="col">17:30</td><td>Incheckning Zoom1</td></tr>
+              <tr><td scope="col">18:30</td><td>Kvällsbön Zoom1</td></tr>
+              <tr><td scope="col">19:00</td><td>Introduktion till Retreaten</td></tr>
+              <tr><td scope="col">20:00</td><td>Bön vid dagens slut</td></tr>
+              <tr><td scope="col">21:00</td><td></td></tr>
+              </tr>
+              <tr>
+                <th scope="col">Lördag</th>
+                <th scope="col"></th>
+              </tr>
+              <tr>
+                <td scope="col">17:30</td>
+                <td>Incheckning Zoom1</td>
+              </tr>
+              <tr>
+                <td scope="col">18:30</td>
+                <td>Kvällsbön Zoom1</td>
+              </tr>
+              <tr>
+                <td scope="col">19:00</td>
+                <td>Introduktion till Retreaten</td>
+              </tr>
+              <tr>
+                <td scope="col">20:00</td>
+                <td>Bön vid dagens slut</td>
+              </tr>
+              <tr>
+                <th scope="col">Söndag</th>
+                <th scope="col"></th>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="col-sm-7 themed-grid-col vagledning">
+          <h2>Vägledningssamtalsbokning</h2>
+          <div id="app"></div><!-- built files will be auto injected -->
+          <div style="clear:both;"></div>
+        </div>
+      </div>
+      <footer>
+          <img src="static/logo.png"/>
+      </footer>
+    </div>
+  </main>
 </body>
 
 </html>

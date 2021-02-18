@@ -1,5 +1,5 @@
 <template>
-  <v-form v-model="valid" ref="form" lazy-validation>
+  <v-form v-model="valid" ref="form" lazy-validation class="login-form">
     <v-container>
       <v-row>
         <v-col>
@@ -10,6 +10,7 @@
             :counter="30"
             :label="$locale.login_email"
             required
+            @keyup.enter="validate()"
           ></v-text-field>
         </v-col>
       </v-row>
@@ -21,12 +22,13 @@
             :rules="passwordRules"
             :label="$locale.login_password"
             required
+            @keyup.enter="validate()"
           ></v-text-field>
         </v-col>
       </v-row>
       <v-row>
         <v-col>
-          <v-btn :disabled="!valid" class="mr-4" @click="validate">
+          <v-btn :disabled="!valid" class="mr-4" @click="validate()">
             {{$locale.login_loginButton}}
           </v-btn>
         </v-col>
@@ -95,5 +97,13 @@ li {
 }
 a {
   color: #42b983;
+}
+.login-form {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
 }
 </style>

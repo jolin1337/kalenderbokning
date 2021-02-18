@@ -2,10 +2,37 @@
   <v-form v-model="valid" ref="form" lazy-validation>
     <v-container>
       <v-row>
-        <v-col cols="12" md="2"></v-col>
-        <v-col md="8">
-          <h1>{{ $locale.home_title }}</h1>
-          <v-timeline :dense="$vuetify.breakpoint.smAndDown">
+        <!-- <v-col cols="12" md="2"></v-col> -->
+        <v-col cols="12" md="12">
+          <div style="text-align: left;padding: 0 50px;">
+            <v-container>
+              <v-row>
+                <v-col cols="12" md="12">
+                  <v-card color="green lighten-2" class="mx-auto" v-if="myBooking">
+                    <v-card-title class="title">
+                      <v-container class="my-booking-card">
+                        <v-row>
+                          <v-col cols="12" md="12">
+                            <div class="white--text">Min bokning:</div>
+                            <h2 class="white--text font-weight-light">
+                              <v-icon dark size="42" class="mr-4"> mdi-calendar-clock </v-icon>
+                              {{myBooking.date}}
+                            </h2>
+                            <h3 class="white--text font-weight-light">
+                                {{myBooking.timeStart}} - {{myBooking.timeEnd}}
+                            </h3>
+                            <div class="white--text">Zoom länk:</div>
+                          </v-col>
+                        </v-row>
+                      </v-container>
+                    </v-card-title>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </v-container>
+          </div>
+          <h3>{{ $locale.home_title }}</h3>
+          <v-timeline dense>
             <v-sheet v-if="isAdmin" @click="newSlot = {}">
               <v-timeline-item icon="mdi-plus" color="green lighten-0" class="text-left">
                 <h3 class="font-weight-light" style="margin-top: 10px;color: grey">
@@ -14,14 +41,16 @@
               </v-timeline-item>
             </v-sheet>
             <v-sheet v-for="(slot, key) in eventSlots"  @click="selectTime(slot)" :key="key">
-              <time-slot 
+              <time-slot
                 @book="validate('addEvent')"
                 @cancel="validate('deleteEvent')"
                 @remove="removeSlot(slot)"
                 :booked="!!checkBooked(slot)"
-                :is-admin="isAdmin"
+                :is-admin="isAdmin && slot.email === email"
                 :is-owner="(checkBooked(slot) || {}).email === email"
-                :selected="activeEvent.toString() === slot.toString()" :time="slot" />
+                :selected="activeEvent.time.toString() === slot.time.toString() && activeEvent.email === slot.email"
+                :time="slot.time"
+                :emailColor="emailColor(slot.email)" />
             </v-sheet>
             <v-sheet v-if="isAdmin" @click="newSlot = {}">
               <v-timeline-item icon="mdi-plus" color="green lighten-0" class="text-left">
@@ -32,7 +61,7 @@
             </v-sheet>
           </v-timeline>
         </v-col>
-        <v-col cols="12" md="2"></v-col>
+        <!-- <v-col cols="12" md="2"></v-col> -->
       </v-row>
     </v-container>
 
@@ -40,10 +69,10 @@
     <alert
       color="blue"
       v-if="!!newSlot"
-      :title="$locale.home_addSlotTitle" 
-      @close="newSlot = false" 
+      :title="$locale.home_addSlotTitle"
+      @close="newSlot = false"
       :alert-msg="$locale.home_addSlotSubTitle">
-      <template v-slot:content  >
+      <template v-slot:content>
           <v-container>
             <v-row>
               <v-col>
@@ -96,7 +125,11 @@ export default {
       eventsLoaded: false,
       eventSlots: [],
       events: [],
-      activeEvent: ''
+      activeEvent: {
+        time: '',
+        email: ''
+      },
+      myBooking: false
     }
   },
   computed: {
@@ -121,8 +154,8 @@ export default {
           event = { email: this.email }
         }
         event.name = 'Event for ' + this.email
-        event.start = this.activeEvent.getTime()
-        event.end = this.activeEvent.getTime() + 30 * 60 * 1000
+        event.start = this.activeEvent.time.getTime()
+        event.end = this.activeEvent.time.getTime() + 30 * 60 * 1000
         data.append('event', JSON.stringify(event))
         data.append('action', action)
         axios
@@ -143,7 +176,7 @@ export default {
     removeSlot (slot) {
       if (this.isAdmin && !this.checkBooked(slot)) {
         let data = new FormData()
-        data.append('timeslots', JSON.stringify([slot]))
+        data.append('timeslots', JSON.stringify([slot.time]))
         data.append('action', 'removeTimeslots')
         axios
           .post(this.url, data)
@@ -198,36 +231,55 @@ export default {
         .get(`${this.url}/?action=eventslots&start=${start}&end=${end}`)
         .then((e) => {
           if (e.data) {
-            this.eventSlots = Object.values(e.data).map(e => new Date(e))
-            this.eventSlots.sort((a, b) => a-b)
+            this.eventSlots = Object.values(e.data).map(e => {
+              return {
+                ...e,
+                time: new Date(e.time)
+              }
+            })
+            this.eventSlots.sort((a, b) => a.time-b.time)
           }
         })
     },
-    selectTime (date) {
-      const booked = this.checkBooked(date)
+    selectTime (slot) {
+      const booked = this.checkBooked(slot)
       if (!booked || booked.email === this.email) {
-        this.activeEvent = date;
+        this.activeEvent = slot
       }
     },
-    checkBooked (start) {
-      const end = new Date(start.getTime() + 30 * 60 * 1000)
+    checkBooked (slot) {
+      const end = new Date(slot.time.getTime() + 30 * 60 * 1000)
       return this.events.find(e => {
         const d = new Date(e.start)
-        return start < new Date(d.getTime() + 30 * 60 * 1000) && end > d
+        return slot.time < new Date(d.getTime() + 30 * 60 * 1000) && end > d
       })
+    },
+    emailColor (email) {
+      console.log(email)
+      return '#' + Array.from(email.substring(0, 6)).map(ch => {
+        return (Math.abs(ch.charCodeAt(0) - 'a'.charCodeAt(0)) % 16).toString(16)
+      }).join('')
     }
   },
   mounted () {
     const start = new Date()
     start.setHours(1,0,0,0)
     const end = new Date(start)
-    end.setDate(end.getDate() + 7)
+    end.setDate(end.getDate() + (this.$locale.bookableDaysForward || 7))
     axios
       .get(`${this.url}/?action=loggedin`)
       .then((r) => {
         this.email = r.data.email
         this.isAdmin = r.data.admin
         this.eventsLoaded = true
+        if (r.data.bookedEvent && r.data.bookedEvent.length > 0) {
+          const bookTime = new Date(r.data.bookedEvent[0].start).toISOString().split('T')
+          this.myBooking = {
+            date: bookTime[0],
+            timeStart: bookTime[1].substring(0, '00:00'.length),
+            timeEnd: new Date(r.data.bookedEvent[0].end).toISOString().split('T')[1].substring(0, '00:00'.length)
+          }
+        }
         if (r.data.loggedin === false) {
           this.$router.push('/login')
           throw Error("Not admin in")
@@ -265,5 +317,8 @@ li {
 }
 a {
   color: #42b983;
+}
+.my-booking-card {
+  padding: 0;
 }
 </style>
