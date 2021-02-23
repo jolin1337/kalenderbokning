@@ -29,6 +29,14 @@
                         </h3>
                         <v-container v-show="selected">
                             <v-row>
+                                <v-col class="white--text font-weight-light">
+                                    {{$locale.timeSlot_bookEmail}}:
+                                    <a class="white--text font-weight-light" :href="'mailto:' + guidanceEmail">
+                                        {{ guidanceEmail }}
+                                    </a>
+                                </v-col>
+                            </v-row>
+                            <v-row>
                                 <v-col>
                                     <p>
                                     <v-btn v-if="!booked && isAdmin" class="mr-4" @click.stop.prevent="$emit('remove')">
@@ -60,6 +68,7 @@ export default {
         selected: Boolean,
         isOwner: Boolean,
         isAdmin: Boolean,
+        guidanceEmail: String,
         emailColor: {
             default () {
                 return 'blue'
