@@ -28,6 +28,18 @@ function is_admin() {
     }
 }
 
+function get_users() {
+    $emails_str = explode("\n", file_get_contents(path(ROOT_DIR, 'email_addresses.txt')));
+    $emails = array_map(function($user) {
+        $user_parts = explode(',', $user);
+        return [
+            'email' => $user_parts[0],
+            'link' => $user_parts[1]
+        ];
+    }, $emails_str);
+    return $emails;
+}
+
 function get_timeslots() {
     $timeslots_file = path(ROOT_DIR, 'eventslots.txt');
     $timeslots_str = explode("\n", file_get_contents($timeslots_file));

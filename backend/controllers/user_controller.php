@@ -3,11 +3,15 @@ require_once('./lib.php');
 
 function login_controller() {
     is_post_or_die();
-    $correct_emails = explode("\n", file_get_contents(path(ROOT_DIR, 'email_addresses.txt')));
+    $login_email = $_POST['email'];
+    $correct_emails = array_values(array_filter(get_users(), function($user) use ($login_email) {
+        return $user['email'] === $login_email;
+    }));
     $correct_passwords = explode("\n", file_get_contents(path(ROOT_DIR, 'passwords.txt')));
-    if (in_array($_POST['email'], $correct_emails) && in_array($_POST['pwd'], $correct_passwords)) {
+    if (count($correct_emails) === 1 && in_array($_POST['pwd'], $correct_passwords)) {
         session_start();
-        $_SESSION['email'] = $_POST['email'];
+        $_SESSION['email'] = $correct_emails[0]['email'];
+        $_SESSION['link'] = $correct_emails[0]['link'];
         $_SESSION['LAST_ACTIVITY'] = $_SERVER['REQUEST_TIME'];
         echo json_encode(array('success' => 'you are logged in as ' . $_SESSION['email']));
     } else {
@@ -27,6 +31,7 @@ function login_info_controller() {
         }));
         echo json_encode(array(
             'email' => $email,
+            'link' => $_SESSION['link'],
             'admin' => is_admin(),
             'bookedEvent' => $booked_events,
             'loggedin' => true

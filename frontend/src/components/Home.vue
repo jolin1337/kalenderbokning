@@ -21,7 +21,9 @@
                             <h3 class="white--text font-weight-light">
                                 {{myBooking.timeStart}} - {{myBooking.timeEnd}}
                             </h3>
-                            <div class="white--text">Zoom länk:</div>
+                            <div v-if="link" class="white--text">
+                              Mötes länk: <a :href="link" class="white--text" target="_blank">{{link}}</a></div>
+                            <v-btn class="mr-4" @click.stop.prevent="validate('deleteEvent')">Avboka</v-btn>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -118,6 +120,7 @@ export default {
   data () {
     return {
       email: null,
+      link: null,
       isAdmin: false,
       errorMsg: '',
       newSlot: false,
@@ -154,6 +157,7 @@ export default {
           event = { email: this.email }
         }
         event.name = 'Event for ' + this.email
+        event.guidance_email = this.activeEvent.email
         event.start = this.activeEvent.time.getTime()
         event.end = this.activeEvent.time.getTime() + 30 * 60 * 1000
         data.append('event', JSON.stringify(event))
@@ -249,13 +253,15 @@ export default {
     },
     checkBooked (slot) {
       const end = new Date(slot.time.getTime() + 30 * 60 * 1000)
-      return this.events.find(e => {
+      const bookedEvent = this.events.find(e => {
         const d = new Date(e.start)
-        return slot.time < new Date(d.getTime() + 30 * 60 * 1000) && end > d
+        const isBookedInterval = slot.time < new Date(d.getTime() + 30 * 60 * 1000) && end > d
+        const isGuidanceEmail = e.guidance_email === slot.email
+        return isBookedInterval && isGuidanceEmail
       })
+      return bookedEvent
     },
     emailColor (email) {
-      console.log(email)
       return '#' + Array.from(email.substring(0, 6)).map(ch => {
         return (Math.abs(ch.charCodeAt(0) - 'a'.charCodeAt(0)) % 16).toString(16)
       }).join('')
@@ -270,6 +276,7 @@ export default {
       .get(`${this.url}/?action=loggedin`)
       .then((r) => {
         this.email = r.data.email
+        this.link = r.data.link
         this.isAdmin = r.data.admin
         this.eventsLoaded = true
         if (r.data.bookedEvent && r.data.bookedEvent.length > 0) {

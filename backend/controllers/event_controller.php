@@ -9,13 +9,15 @@ function add_event_controller() {
         $newEvent = json_decode($_POST['event'], true);
         $allEvents = json_decode(file_get_contents($event_file), true);
         $found_event = false;
+        // Check overlapping events
         for ($i=0; $i < count($allEvents); $i++) {
             $event = $allEvents[$i];
             if ($event['email'] === $newEvent['email'] && $newEvent['email'] === $email) {
                 $allEvents[$i]['start'] = $newEvent['start'];
                 $allEvents[$i]['end'] = $newEvent['end'];
+                $allEvents[$i]['guidance_email'] = $newEvent['guidance_email'];
                 $found_event = true;
-            } else if ((intval($event['start']) < intval($newEvent['end']) && intval($event['end']) > intval($newEvent['start']))) {
+            } else if ($event['guidance_email'] === $newEvent['guidance_email'] && (intval($event['start']) < intval($newEvent['end']) && intval($event['end']) > intval($newEvent['start']))) {
                 echo json_encode(array(
                     'error' => 'Overlapping events'
                 ));
@@ -28,18 +30,21 @@ function add_event_controller() {
         $eventSlots = get_timeslots();
         $valid_slot = false;
         $slot_interval = 30 * 60 * 1000;
+        // Match event with pre-configured timeslots
         for ($i=0; $i < count($eventSlots); $i++) {
             $slot1 = strtotime($eventSlots[$i]['time']) * 1000;
-            if ($slot1 <= intval($newEvent['start'])) {
+            $slot1_email = $eventSlots[$i]['email'];
+            if ($slot1 <= intval($newEvent['start']) && $newEvent['guidance_email'] === $slot1_email) {
                 while(true) {
-                    if ($slot1 + $slot_interval >= intval($newEvent['end'])) {
+                    if ($slot1 + $slot_interval >= intval($newEvent['end']) && $newEvent['guidance_email'] === $slot1_email) {
                         $valid_slot = true;
                         break;
                     }
                     $found_next_slot = false;
                     for ($j=0; $j < count($eventSlots); $j++) {
                         $slot2 = strtotime($eventSlots[$j]['time']) * 1000;
-                        if ($slot1 + $slot_interval === $slot2) {
+                        $slot2_email = $eventSlots[$j]['email'];
+                        if ($slot1 + $slot_interval === $slot2 && $newEvent['guidance_email'] === $slot2_email) {
                             $found_next_slot = true;
                         }
                     }
