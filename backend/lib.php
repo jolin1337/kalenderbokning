@@ -1,5 +1,9 @@
 <?php
 define("ROOT_DIR", __DIR__);
+//date_default_timezone_set('Europe/Stockholm');
+date_default_timezone_set('GMT');
+
+
 $is_loggedin_called = null;
 function is_loggedin() {
     if ($is_loggedin_called !== null) return $is_loggedin_called;
@@ -47,7 +51,8 @@ function get_timeslots() {
             $els = explode(',', $slot);
             return [
                 'time' => $els[0],
-                'email' => $els[1]
+                'email' => $els[1],
+                'link' => $els[2]
             ];
         },
         $timeslots_str
@@ -55,13 +60,31 @@ function get_timeslots() {
     return $timeslots;
 }
 function store_timeslots($timeslots) {
+    $valid_slots = array_values(array_filter($timeslots, function($slot) {
+        return (new DateTime($slot['time'])) > (new DateTime()) &&
+                count(explode('@', $slot['email'])) === 2 &&
+                count(explode('.', $slot['link'])) > 0;
+    }));
     $timeslots_file = path(ROOT_DIR, 'eventslots.txt');
     $timeslots_str = implode("\n", array_map(function($slot) {
-        return $slot['time'] . ',' . $slot['email'];
-    }, $timeslots));
+        return $slot['time'] . ',' . $slot['email'] . ',' . $slot['link'];
+    }, $valid_slots));
     file_put_contents($timeslots_file, $timeslots_str);
 }
 
+
+function filter_by_key($obj, $key, $value) {
+    return filter_by_keys($obj, [$key => $value]);
+}
+function filter_by_keys($obj, $key_value) {
+    return array_values(array_filter($obj, function($item) use ($key, $key_value) {
+        $res = true;
+        foreach ($key_value as $key => $value) {
+            $res = $res && $item[$key] === $value;
+        }
+        return $res;
+    }));
+}
 function sendIcalEvent($from_name, $from_address, $to_name, $to_address, $startTime, $endTime, $subject, $description, $location) {
     $domain = 'godesity.se';
 
@@ -91,19 +114,19 @@ function sendIcalEvent($from_name, $from_address, $to_name, $to_address, $startT
     'VERSION:2.0' . "\r\n" .
     'METHOD:REQUEST' . "\r\n" .
     'BEGIN:VTIMEZONE' . "\r\n" .
-    'TZID:Eastern Time' . "\r\n" .
+    'TZID:GMT' . "\r\n" .
     'BEGIN:STANDARD' . "\r\n" .
     'DTSTART:20091101T020000' . "\r\n" .
     'RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=1SU;BYMONTH=11' . "\r\n" .
-    'TZOFFSETFROM:-0400' . "\r\n" .
-    'TZOFFSETTO:-0500' . "\r\n" .
+    'TZOFFSETFROM:+0000' . "\r\n" .
+    'TZOFFSETTO:+0000' . "\r\n" .
     'TZNAME:EST' . "\r\n" .
     'END:STANDARD' . "\r\n" .
     'BEGIN:DAYLIGHT' . "\r\n" .
     'DTSTART:20090301T020000' . "\r\n" .
     'RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=2SU;BYMONTH=3' . "\r\n" .
-    'TZOFFSETFROM:-0500' . "\r\n" .
-    'TZOFFSETTO:-0400' . "\r\n" .
+    'TZOFFSETFROM:+0000' . "\r\n" .
+    'TZOFFSETTO:+0000' . "\r\n" .
     'TZNAME:EDST' . "\r\n" .
     'END:DAYLIGHT' . "\r\n" .
     'END:VTIMEZONE' . "\r\n" .
@@ -113,8 +136,8 @@ function sendIcalEvent($from_name, $from_address, $to_name, $to_address, $startT
     'LAST-MODIFIED:' . date("Ymd\TGis") . "\r\n" .
     'UID:'.date("Ymd\TGis", strtotime($startTime)).rand()."@".$domain."\r\n" .
     'DTSTAMP:'.date("Ymd\TGis"). "\r\n" .
-    'DTSTART;TZID="Eastern Time":'.date("Ymd\THis", strtotime($startTime)). "\r\n" .
-    'DTEND;TZID="Eastern Time":'.date("Ymd\THis", strtotime($endTime)). "\r\n" .
+    'DTSTART;TZID="GMT":'.date("Ymd\THis", strtotime($startTime)). "\r\n" .
+    'DTEND;TZID="GMT":'.date("Ymd\THis", strtotime($endTime)). "\r\n" .
     'TRANSP:OPAQUE'. "\r\n" .
     'SEQUENCE:1'. "\r\n" .
     'SUMMARY:' . $subject . "\r\n" .

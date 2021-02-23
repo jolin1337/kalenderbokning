@@ -1,8 +1,10 @@
 <template>
-    <v-overlay
+    <v-dialog
         :z-index="10"
         :value="show"
         :dark="false"
+        max-width="1000px"
+        scrollable
         light
     >
         <v-card :color="color + ' lighten-1'" class="mx-auto">
@@ -41,7 +43,7 @@
                 </v-container>
             </v-card-text>
         </v-card>
-    </v-overlay>
+    </v-dialog>
 </template>
 
 <script>

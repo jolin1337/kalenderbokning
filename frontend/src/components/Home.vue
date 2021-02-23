@@ -50,6 +50,7 @@
                 :booked="!!checkBooked(slot)"
                 :is-admin="isAdmin && slot.email === email"
                 :is-owner="(checkBooked(slot) || {}).email === email"
+                :guidance-email="slot.email"
                 :selected="activeEvent.time.toString() === slot.time.toString() && activeEvent.email === slot.email"
                 :time="slot.time"
                 :emailColor="emailColor(slot.email)" />
@@ -70,12 +71,21 @@
     <alert :show="!!errorMsg" :title="$locale.home_errorTitle" color="red" @close="errorMsg = ''" :alert-msg="errorMsg"></alert>
     <alert
       color="blue"
+      scrollable
       v-if="!!newSlot"
       :title="$locale.home_addSlotTitle"
       @close="newSlot = false"
       :alert-msg="$locale.home_addSlotSubTitle">
       <template v-slot:content>
           <v-container>
+            <v-row>
+              <v-col>
+                <v-text-field
+                  v-model="newSlot.link"
+                  :label="'Länk till remote möte'"
+                ></v-text-field>
+              </v-col>
+            </v-row>
             <v-row>
               <v-col>
                 <v-date-picker class="theme--light"
@@ -197,8 +207,9 @@ export default {
     addSlot () {
       if (this.newSlot.date && this.newSlot.time && this.isAdmin) {
         let data = new FormData()
-        const slot = this.newSlot.date + 'T' + this.newSlot.time + ':00.000Z'
-        data.append('timeslots', JSON.stringify([slot]))
+        const time = this.newSlot.date + 'T' + this.newSlot.time + ':00.000Z'
+        const link = this.newSlot.link
+        data.append('timeslots', JSON.stringify([{time, link}]))
         data.append('action', 'addTimeslots')
         axios
           .post(this.url, data)

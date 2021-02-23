@@ -5,15 +5,20 @@ function add_timeslots_controller() {
     is_post_or_die();
     $email = is_loggedin();
     if ($email !== false && is_admin()) {
-        $new_timeslots = json_decode($_POST['timeslots']);
+        $new_timeslots = json_decode($_POST['timeslots'], true);
         $timeslots = get_timeslots();
-        foreach ($new_timeslots as $new_time) {
+        foreach ($new_timeslots as $timeslot) {
             $new_timeslot = [
-                'time' => $new_time,
-                'email' => $email
+                'time' => $timeslot['time'],
+                'email' => $email,
+                'link' => $timeslot['link']
             ];
-            if (!in_array($new_timeslot, $timeslots)) {
+            $fk = ['time' => $new_timeslot['time'], 'email' => $new_timeslot['email']];
+            $old_timeslots = filter_by_keys($timeslots, $fk);
+            if (count($old_timeslots) === 0) {
                 $timeslots[] = $new_timeslot;
+            } else {
+                $old_timeslots[0]['link'] = $new_timeslot['link'];
             }
         }
         store_timeslots($timeslots);
@@ -33,8 +38,6 @@ function remove_timeslots_controller() {
         $timeslots = get_timeslots();
         $new_timeslots = json_decode($_POST['timeslots']);
         $all_slots = array_filter($timeslots, function($slot) use ($new_timeslots, $email) {
-            //var_dump($slot['time'], $new_timeslots);
-            //var_dump($slot['email'], $email);
             return !in_array($slot['time'], $new_timeslots, true) || $email !== $slot['email'];
         });
         //$slot_path = path(ROOT_DIR, 'eventslots.txt');
@@ -55,11 +58,15 @@ function get_timeslots_controller() {
     if ($email !== false) {
         $start = strtotime($_GET['start']) * 1000;
         $end = strtotime($_GET['end']) * 1000;
-        $eventSlots = get_timeslots();
-        echo json_encode(array_filter($eventSlots, function ($slot) use ($start, $end) {
+        $event_slots = get_timeslots();
+        $active_event_slots = array_filter($event_slots, function ($slot) use ($start, $end) {
             $t = strtotime($slot['time']) * 1000;
             return $t >= time() && $t >= $start && $t <= $end + 24 * 60 * 60 * 1000;
-        }));
+        });
+        echo json_encode(array_map(function ($slot) {
+            unset($slot['link']);
+            return $slot;
+        }, $active_event_slots));
     } else {
         echo json_encode(array('error' => 'not logged in'));
     }

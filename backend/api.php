@@ -2,7 +2,6 @@
 require_once('./lib.php');
 require_once('./controllers.php');
 
-date_default_timezone_set('Europe/Stockholm');
 if (isset($_POST['action'])) {
     switch($_POST['action']) {
         case 'login':

@@ -27,35 +27,15 @@ function add_event_controller() {
         if ($found_event === false) {
             $allEvents[] = $newEvent;
         }
-        $eventSlots = get_timeslots();
+        $event_slots = get_timeslots();
         $valid_slot = false;
         $slot_interval = 30 * 60 * 1000;
+
         // Match event with pre-configured timeslots
-        for ($i=0; $i < count($eventSlots); $i++) {
-            $slot1 = strtotime($eventSlots[$i]['time']) * 1000;
-            $slot1_email = $eventSlots[$i]['email'];
-            if ($slot1 <= intval($newEvent['start']) && $newEvent['guidance_email'] === $slot1_email) {
-                while(true) {
-                    if ($slot1 + $slot_interval >= intval($newEvent['end']) && $newEvent['guidance_email'] === $slot1_email) {
-                        $valid_slot = true;
-                        break;
-                    }
-                    $found_next_slot = false;
-                    for ($j=0; $j < count($eventSlots); $j++) {
-                        $slot2 = strtotime($eventSlots[$j]['time']) * 1000;
-                        $slot2_email = $eventSlots[$j]['email'];
-                        if ($slot1 + $slot_interval === $slot2 && $newEvent['guidance_email'] === $slot2_email) {
-                            $found_next_slot = true;
-                        }
-                    }
-                    if ($found_next_slot === true) {
-                        $slot1 = $slot1 + $slot_interval;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
+        $event_time = (new DateTime())->setTimestamp($newEvent['start']/1000)->format('Y-m-d\TH:i:s.000\Z');
+        $matched_event_slots = filter_by_keys($event_slots, ['time' => $event_time, 'email' => $newEvent['guidance_email']]);
+        $valid_slot = count($matched_event_slots) === 1;
+
         if ($valid_slot === false) {
             echo json_encode(array(
                 'error' => 'Not within a timeslot'
@@ -65,10 +45,10 @@ function add_event_controller() {
 
         $subject = "Samtal har blivit inbokat";
         $admin_email = explode("\n", file_get_contents(path(ROOT_DIR, 'admins.txt')))[0];
-        $to_name = explode('@', $admin_email)[0];
         $from_name = explode('@', $email)[0];
         $from_address = $admin_email;
-        $to_address = $admin_email;
+        $to_name = explode('@', $matched_event_slots[0]['email'])[0];
+        $to_address = $matched_event_slots[0]['email'];
         $start = new DateTime();
         $start->setTimestamp(intdiv($newEvent['start'], 1000));
         $end = new DateTime();
@@ -78,8 +58,16 @@ function add_event_controller() {
         $time_end = date_format($end, 'H:i:s');
         $startTime = "$date $time_start";
         $endTime = "$date $time_end";
-        $description = "$email har bokat upp dig för ett samtal mellan $time_start och $time_end, $date";
-        $location = "Setup yourself as you please!!!";
+
+        // Add meeting link from matched timeslot link
+        $link = $matched_event_slots[0]['link'];
+        $description = "<p>$email har bokat upp dig för ett samtal mellan $time_start och $time_end, $date</p>";
+        $description .= "<p>Länken till mötet: <a href=\"$link\">$link</a></p>";
+        $location = "Remote: $link";
+        sendIcalEvent($from_name, $from_address, $to_name, $to_address, $startTime, $endTime, $subject, $description, $location);
+        $description = "<p>Du har bokat upp dig för ett samtal mellan $time_start och $time_end, $date med $to_address</p>";
+        $to_name = explode('@', $email)[0];
+        $to_address = $email;
         sendIcalEvent($from_name, $from_address, $to_name, $to_address, $startTime, $endTime, $subject, $description, $location);
         file_put_contents($event_file, json_encode($allEvents));
         if ($found_event) {
