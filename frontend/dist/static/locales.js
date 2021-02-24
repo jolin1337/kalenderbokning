@@ -15,6 +15,7 @@ window.defaultLocale = {
     timeSlot_removeButton: 'Ta bort',
     timeSlot_bookButton: 'Boka!',
     timeSlot_cancelButton: 'Avboka',
+    timeSlot_bookEmail: 'Samtalsledare',
 
     home_title: 'Välj en tid att boka samtal',
     home_addNewSlotButton: 'Lägg till ny tid',

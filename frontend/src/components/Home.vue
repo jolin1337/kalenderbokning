@@ -159,6 +159,12 @@ export default {
   methods: {
     validate (action) {
       this.$refs.form.validate()
+      if (this.activeEvent.email === '') {
+        this.activeEvent = {
+          email: this.myBooking.guidance_email,
+          time: new Date(this.myBooking.date + 'T' + this.myBooking.timeStart)
+        }
+      }
       const booked = this.checkBooked(this.activeEvent)
       if (this.valid && (!booked || this.email === booked.email)) {
         let data = new FormData()
@@ -252,7 +258,7 @@ export default {
                 time: new Date(e.time)
               }
             })
-            this.eventSlots.sort((a, b) => a.time-b.time)
+            this.eventSlots.sort((a, b) => a.time - b.time)
           }
         })
     },
@@ -280,7 +286,7 @@ export default {
   },
   mounted () {
     const start = new Date()
-    start.setHours(1,0,0,0)
+    start.setHours(1, 0, 0, 0)
     const end = new Date(start)
     end.setDate(end.getDate() + (this.$locale.bookableDaysForward || 7))
     axios
@@ -294,13 +300,14 @@ export default {
           const bookTime = new Date(r.data.bookedEvent[0].start).toISOString().split('T')
           this.myBooking = {
             date: bookTime[0],
+            guidance_email: r.data.bookedEvent[0].guidance_email,
             timeStart: bookTime[1].substring(0, '00:00'.length),
             timeEnd: new Date(r.data.bookedEvent[0].end).toISOString().split('T')[1].substring(0, '00:00'.length)
           }
         }
         if (r.data.loggedin === false) {
           this.$router.push('/login')
-          throw Error("Not admin in")
+          throw Error('Not admin in')
         }
       })
       .then(() => this.getEventSlots({

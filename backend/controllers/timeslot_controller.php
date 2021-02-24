@@ -22,9 +22,6 @@ function add_timeslots_controller() {
             }
         }
         store_timeslots($timeslots);
-        //$slot_path = path(ROOT_DIR, 'eventslots.txt');
-        // $timeslots = array_unique(array_merge($new_timeslots, explode("\n", file_get_contents($slot_path))));
-        //file_put_contents($slot_path, implode("\n", $timeslots));
         echo json_encode(array('success' => 'added event time'));
     } else {
         echo json_encode(array('error' => 'not admin'));
@@ -40,11 +37,6 @@ function remove_timeslots_controller() {
         $all_slots = array_filter($timeslots, function($slot) use ($new_timeslots, $email) {
             return !in_array($slot['time'], $new_timeslots, true) || $email !== $slot['email'];
         });
-        //$slot_path = path(ROOT_DIR, 'eventslots.txt');
-        //$timeslots = array_diff(explode("\n", file_get_contents($slot_path)), $new_timeslots);
-        //var_dump($new_timeslots);
-        //var_dump($timeslots);
-        //file_put_contents($slot_path, implode("\n", $timeslots));
         store_timeslots($all_slots);
         echo json_encode(array('success' => 'removed event time'));
     } else {

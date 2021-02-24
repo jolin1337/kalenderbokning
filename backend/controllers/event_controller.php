@@ -5,17 +5,16 @@ function add_event_controller() {
     is_post_or_die();
     $email = is_loggedin();
     if ($email !== false) {
-        $event_file = path(ROOT_DIR, 'events.json');
         $newEvent = json_decode($_POST['event'], true);
-        $allEvents = json_decode(file_get_contents($event_file), true);
+        $all_events = get_events();
         $found_event = false;
         // Check overlapping events
-        for ($i=0; $i < count($allEvents); $i++) {
-            $event = $allEvents[$i];
+        for ($i=0; $i < count($all_events); $i++) {
+            $event = $all_events[$i];
             if ($event['email'] === $newEvent['email'] && $newEvent['email'] === $email) {
-                $allEvents[$i]['start'] = $newEvent['start'];
-                $allEvents[$i]['end'] = $newEvent['end'];
-                $allEvents[$i]['guidance_email'] = $newEvent['guidance_email'];
+                $all_events[$i]['start'] = $newEvent['start'];
+                $all_events[$i]['end'] = $newEvent['end'];
+                $all_events[$i]['guidance_email'] = $newEvent['guidance_email'];
                 $found_event = true;
             } else if ($event['guidance_email'] === $newEvent['guidance_email'] && (intval($event['start']) < intval($newEvent['end']) && intval($event['end']) > intval($newEvent['start']))) {
                 echo json_encode(array(
@@ -25,7 +24,7 @@ function add_event_controller() {
             }
         }
         if ($found_event === false) {
-            $allEvents[] = $newEvent;
+            $all_events[] = $newEvent;
         }
         $event_slots = get_timeslots();
         $valid_slot = false;
@@ -44,7 +43,7 @@ function add_event_controller() {
         }
 
         $subject = "Samtal har blivit inbokat";
-        $admin_email = explode("\n", file_get_contents(path(ROOT_DIR, 'admins.txt')))[0];
+        $admin_email = get_admins()[0];
         $from_name = explode('@', $email)[0];
         $from_address = $admin_email;
         $to_name = explode('@', $matched_event_slots[0]['email'])[0];
@@ -69,7 +68,7 @@ function add_event_controller() {
         $to_name = explode('@', $email)[0];
         $to_address = $email;
         sendIcalEvent($from_name, $from_address, $to_name, $to_address, $startTime, $endTime, $subject, $description, $location);
-        file_put_contents($event_file, json_encode($allEvents));
+        store_events($all_events);
         if ($found_event) {
             echo json_encode(array('success' => 'updated event for ' . $email));
         } else {
@@ -84,14 +83,13 @@ function delete_event_controller() {
     is_post_or_die();
     $email = is_loggedin();
     if ($email !== false) {
-        $event_file = path(ROOT_DIR, 'events.json');
-        $allEvents = json_decode(file_get_contents($event_file), true);
-        for ($i=0; $i < count($allEvents); $i++) {
-            if ($allEvents[$i]['email'] === $email) {
-                array_splice($allEvents, $i, 1);
+        $all_events = get_events();
+        for ($i=0; $i < count($all_events); $i++) {
+            if ($all_events[$i]['email'] === $email) {
+                array_splice($all_events, $i, 1);
             }
         }
-        file_put_contents($event_file, json_encode($allEvents));
+        store_events($all_events);
         echo json_encode(array('success' => 'deleted event for ' . $email));
     } else {
         echo json_encode(array('error' => 'not logged in'));
@@ -102,10 +100,9 @@ function get_events_controller() {
     is_get_or_die();
     $email = is_loggedin();
     if ($email !== false) {
-        $event_file = path(ROOT_DIR, 'events.json');
         $start = strtotime($_GET['start']) * 1000;
         $end = strtotime($_GET['end']) * 1000;
-        $allEvents = json_decode(file_get_contents($event_file), true);
+        $allEvents = get_events();
         echo json_encode(array_map(function($event) use ($email) {
             if ($event['email'] !== $email) {
                 $event['name'] = 'Bokad';

@@ -27,13 +27,13 @@ function is_loggedin() {
 function is_admin() {
     $email = is_loggedin();
     if ($email !== false) {
-        $admins = explode("\n", file_get_contents(path(ROOT_DIR, 'admins.txt')));
+        $admins = get_admins();
         return in_array($email, $admins);
     }
 }
 
 function get_users() {
-    $emails_str = explode("\n", file_get_contents(path(ROOT_DIR, 'email_addresses.txt')));
+    $emails_str = explode("\n", file_get_contents(path(ROOT_DIR, 'data/email_addresses.txt')));
     $emails = array_map(function($user) {
         $user_parts = explode(',', $user);
         return [
@@ -45,7 +45,7 @@ function get_users() {
 }
 
 function get_timeslots() {
-    $timeslots_file = path(ROOT_DIR, 'eventslots.txt');
+    $timeslots_file = path(ROOT_DIR, 'data/eventslots.txt');
     $timeslots_str = explode("\n", file_get_contents($timeslots_file));
     $timeslots = array_map(function ($slot) {
             $els = explode(',', $slot);
@@ -65,11 +65,31 @@ function store_timeslots($timeslots) {
                 count(explode('@', $slot['email'])) === 2 &&
                 count(explode('.', $slot['link'])) > 0;
     }));
-    $timeslots_file = path(ROOT_DIR, 'eventslots.txt');
+    $timeslots_file = path(ROOT_DIR, 'data/eventslots.txt');
     $timeslots_str = implode("\n", array_map(function($slot) {
         return $slot['time'] . ',' . $slot['email'] . ',' . $slot['link'];
     }, $valid_slots));
     file_put_contents($timeslots_file, $timeslots_str);
+}
+
+function get_events() {
+    $event_file = path(ROOT_DIR, 'data/events.json');
+    $all_events = json_decode(file_get_contents($event_file), true);
+    return $all_events;
+}
+
+function store_events($all_events) {
+    $event_file = path(ROOT_DIR, 'data/events.json');
+    file_put_contents($event_file, json_encode($all_events));
+}
+
+function get_admins() {
+    $admins = explode("\n", file_get_contents(path(ROOT_DIR, 'data/admins.txt')));
+    return $admins;
+}
+function get_passwords() {
+    $pwds = explode("\n", file_get_contents(path(ROOT_DIR, 'data/passwords.txt')));
+    return $pwds;
 }
 
 
