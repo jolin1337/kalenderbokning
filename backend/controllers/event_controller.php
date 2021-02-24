@@ -87,6 +87,7 @@ function delete_event_controller() {
         for ($i=0; $i < count($all_events); $i++) {
             if ($all_events[$i]['email'] === $email) {
                 array_splice($all_events, $i, 1);
+                $i -= 1;
             }
         }
         store_events($all_events);
