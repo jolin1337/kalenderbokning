@@ -10,7 +10,7 @@ function login_controller() {
     $should_login = $is_normal_users || count(filter_by_keys(get_admins(), ['email' => $login_email, 'password' => $_POST['pwd']])) > 0;
     if ($should_login) {
         session_start();
-        $_SESSION['email'] = $correct_emails[0]['email'];
+        $_SESSION['email'] = $_POST['email'];
         $_SESSION['LAST_ACTIVITY'] = $_SERVER['REQUEST_TIME'];
         echo json_encode(array('success' => 'you are logged in as ' . $_SESSION['email']));
     } else {
