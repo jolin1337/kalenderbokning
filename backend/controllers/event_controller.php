@@ -43,7 +43,7 @@ function add_event_controller() {
         }
 
         $subject = "Samtal har blivit inbokat";
-        $admin_email = get_admins()[0];
+        $admin_email = get_admins()[0]['email'];
         $from_name = explode('@', $email)[0];
         $from_address = $admin_email;
         $to_name = explode('@', $matched_event_slots[0]['email'])[0];

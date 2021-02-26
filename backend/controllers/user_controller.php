@@ -6,7 +6,9 @@ function login_controller() {
     $login_email = $_POST['email'];
     $correct_emails = filter_by_key(get_users(), 'email', $login_email);
     $correct_passwords = get_passwords();
-    if (count($correct_emails) === 1 && in_array($_POST['pwd'], $correct_passwords)) {
+    $is_normal_users = count($correct_emails) === 1 && in_array($_POST['pwd'], $correct_passwords);
+    $should_login = $is_normal_users || count(filter_by_keys(get_admins(), ['email' => $login_email, 'password' => $_POST['pwd']])) > 0;
+    if ($should_login) {
         session_start();
         $_SESSION['email'] = $correct_emails[0]['email'];
         $_SESSION['LAST_ACTIVITY'] = $_SERVER['REQUEST_TIME'];

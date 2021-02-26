@@ -28,7 +28,7 @@ function is_admin() {
     $email = is_loggedin();
     if ($email !== false) {
         $admins = get_admins();
-        return in_array($email, $admins);
+        return count(filter_by_key($admins, 'email', $email)) > 0;
     }
 }
 
@@ -38,7 +38,7 @@ function get_users() {
         $user_parts = explode(',', $user);
         return [
             'email' => $user_parts[0],
-            'link' => $user_parts[1]
+            'link' => ''
         ];
     }, $emails_str);
     return $emails;
@@ -85,7 +85,13 @@ function store_events($all_events) {
 
 function get_admins() {
     $admins = explode("\n", file_get_contents(path(ROOT_DIR, 'data/admins.txt')));
-    return $admins;
+    return array_map(function($user) {
+        $user_arr = explode(',', $user);
+        return [
+            'email' => $user_arr[0],
+            'password' => $user_arr[1]
+        ];
+    }, $admins);
 }
 function get_passwords() {
     $pwds = explode("\n", file_get_contents(path(ROOT_DIR, 'data/passwords.txt')));
