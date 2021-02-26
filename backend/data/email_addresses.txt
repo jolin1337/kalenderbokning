@@ -1,1 +1,1 @@
-foo@bar.se,https://zoom-link.se
+foo@bar2.se

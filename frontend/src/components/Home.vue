@@ -1,131 +1,136 @@
 <template>
-  <v-form v-model="valid" ref="form" lazy-validation>
-    <v-container>
-      <v-row>
-        <!-- <v-col cols="12" md="2"></v-col> -->
-        <v-col cols="12" md="12">
-          <div style="text-align: left;padding: 0 50px;">
+  <div>
+    <login-info :info="userInfo"></login-info>
+    <v-form v-model="valid" ref="form" lazy-validation>
+      <v-container>
+        <v-row>
+          <!-- <v-col cols="12" md="2"></v-col> -->
+          <v-col cols="12" md="12">
+            <div style="text-align: left;padding: 0 50px;">
+              <v-container>
+                <v-row>
+                  <v-col cols="12" md="12">
+                    <v-card color="green lighten-2" class="mx-auto" v-if="myBooking">
+                      <v-card-title class="title">
+                        <v-container class="my-booking-card">
+                          <v-row>
+                            <v-col cols="12" md="12">
+                              <div class="white--text">Min bokning:</div>
+                              <h2 class="white--text font-weight-light">
+                                <v-icon dark size="42" class="mr-4"> mdi-calendar-clock </v-icon>
+                                {{myBooking.date}}
+                              </h2>
+                              <h3 class="white--text font-weight-light">
+                                  {{myBooking.timeStart}} - {{myBooking.timeEnd}}
+                              </h3>
+                              <div v-if="link" class="white--text">
+                                Mötes länk: <a :href="link" class="white--text" target="_blank">{{link}}</a></div>
+                              <v-btn class="mr-4" @click.stop.prevent="validate('deleteEvent')">Avboka</v-btn>
+                            </v-col>
+                          </v-row>
+                        </v-container>
+                      </v-card-title>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </div>
+            <h3>{{ $locale.home_title }}</h3>
+            <v-timeline dense>
+              <v-sheet v-if="isAdmin" @click="newSlot = {}">
+                <v-timeline-item icon="mdi-plus" color="green lighten-0" class="text-left">
+                  <h3 class="font-weight-light" style="margin-top: 10px;color: grey">
+                    {{$locale.home_addNewSlotButton}}
+                  </h3>
+                </v-timeline-item>
+              </v-sheet>
+              <v-sheet v-for="(slot, key) in eventSlots"  @click="selectTime(slot)" :key="key">
+                <time-slot
+                  @book="validate('addEvent')"
+                  @cancel="validate('deleteEvent')"
+                  @remove="removeSlot(slot)"
+                  :booked="!!checkBooked(slot)"
+                  :is-admin="isAdmin && slot.email === email"
+                  :is-owner="(checkBooked(slot) || {}).email === email"
+                  :guidance-email="slot.email"
+                  :selected="activeEvent.time.toString() === slot.time.toString() && activeEvent.email === slot.email"
+                  :time="slot.time"
+                  :emailColor="emailColor(slot.email)" />
+              </v-sheet>
+              <v-sheet v-if="isAdmin" @click="newSlot = {}">
+                <v-timeline-item icon="mdi-plus" color="green lighten-0" class="text-left">
+                  <h3 class="font-weight-light" style="margin-top: 10px;color: grey">
+                    {{$locale.home_addNewSlotButton}}
+                  </h3>
+                </v-timeline-item>
+              </v-sheet>
+            </v-timeline>
+          </v-col>
+          <!-- <v-col cols="12" md="2"></v-col> -->
+        </v-row>
+      </v-container>
+
+      <alert :show="!!errorMsg" :title="$locale.home_errorTitle" color="red" @close="errorMsg = ''" :alert-msg="errorMsg"></alert>
+      <alert
+        color="blue"
+        scrollable
+        v-if="!!newSlot"
+        :title="$locale.home_addSlotTitle"
+        @close="newSlot = false"
+        :alert-msg="$locale.home_addSlotSubTitle">
+        <template v-slot:content>
             <v-container>
               <v-row>
-                <v-col cols="12" md="12">
-                  <v-card color="green lighten-2" class="mx-auto" v-if="myBooking">
-                    <v-card-title class="title">
-                      <v-container class="my-booking-card">
-                        <v-row>
-                          <v-col cols="12" md="12">
-                            <div class="white--text">Min bokning:</div>
-                            <h2 class="white--text font-weight-light">
-                              <v-icon dark size="42" class="mr-4"> mdi-calendar-clock </v-icon>
-                              {{myBooking.date}}
-                            </h2>
-                            <h3 class="white--text font-weight-light">
-                                {{myBooking.timeStart}} - {{myBooking.timeEnd}}
-                            </h3>
-                            <div v-if="link" class="white--text">
-                              Mötes länk: <a :href="link" class="white--text" target="_blank">{{link}}</a></div>
-                            <v-btn class="mr-4" @click.stop.prevent="validate('deleteEvent')">Avboka</v-btn>
-                          </v-col>
-                        </v-row>
-                      </v-container>
-                    </v-card-title>
-                  </v-card>
+                <v-col>
+                  <v-text-field
+                    v-model="newSlot.link"
+                    :label="'Länk till remote möte'"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <v-date-picker class="theme--light"
+                    color="green lighten-1"
+                    locale="swe"
+                    v-model="newSlot.date"></v-date-picker>
+                </v-col>
+                <v-col>
+                  <v-time-picker
+                    color="green lighten-1"
+                    v-model="newSlot.time"
+                    :allowed-minutes="(m) => m % 5 === 0"
+                    format="24hr"
+                  ></v-time-picker>
                 </v-col>
               </v-row>
             </v-container>
-          </div>
-          <h3>{{ $locale.home_title }}</h3>
-          <v-timeline dense>
-            <v-sheet v-if="isAdmin" @click="newSlot = {}">
-              <v-timeline-item icon="mdi-plus" color="green lighten-0" class="text-left">
-                <h3 class="font-weight-light" style="margin-top: 10px;color: grey">
-                  {{$locale.home_addNewSlotButton}}
-                </h3>
-              </v-timeline-item>
-            </v-sheet>
-            <v-sheet v-for="(slot, key) in eventSlots"  @click="selectTime(slot)" :key="key">
-              <time-slot
-                @book="validate('addEvent')"
-                @cancel="validate('deleteEvent')"
-                @remove="removeSlot(slot)"
-                :booked="!!checkBooked(slot)"
-                :is-admin="isAdmin && slot.email === email"
-                :is-owner="(checkBooked(slot) || {}).email === email"
-                :guidance-email="slot.email"
-                :selected="activeEvent.time.toString() === slot.time.toString() && activeEvent.email === slot.email"
-                :time="slot.time"
-                :emailColor="emailColor(slot.email)" />
-            </v-sheet>
-            <v-sheet v-if="isAdmin" @click="newSlot = {}">
-              <v-timeline-item icon="mdi-plus" color="green lighten-0" class="text-left">
-                <h3 class="font-weight-light" style="margin-top: 10px;color: grey">
-                  {{$locale.home_addNewSlotButton}}
-                </h3>
-              </v-timeline-item>
-            </v-sheet>
-          </v-timeline>
-        </v-col>
-        <!-- <v-col cols="12" md="2"></v-col> -->
-      </v-row>
-    </v-container>
-
-    <alert :show="!!errorMsg" :title="$locale.home_errorTitle" color="red" @close="errorMsg = ''" :alert-msg="errorMsg"></alert>
-    <alert
-      color="blue"
-      scrollable
-      v-if="!!newSlot"
-      :title="$locale.home_addSlotTitle"
-      @close="newSlot = false"
-      :alert-msg="$locale.home_addSlotSubTitle">
-      <template v-slot:content>
-          <v-container>
-            <v-row>
-              <v-col>
-                <v-text-field
-                  v-model="newSlot.link"
-                  :label="'Länk till remote möte'"
-                ></v-text-field>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col>
-                <v-date-picker class="theme--light"
-                  color="green lighten-1"
-                  locale="swe"
-                  v-model="newSlot.date"></v-date-picker>
-              </v-col>
-              <v-col>
-                <v-time-picker
-                  color="green lighten-1"
-                  v-model="newSlot.time"
-                  :allowed-minutes="(m) => m % 5 === 0"
-                  format="24hr"
-                ></v-time-picker>
-              </v-col>
-            </v-row>
-          </v-container>
-      </template>
-      <template v-slot:buttons>
-        <v-btn
-            class="white--text"
-            color="teal"
-            @click="addSlot()"
-        >
-        {{$locale.home_addSlotButton}}
-        </v-btn>
-      </template>
-    </alert>
-  </v-form>
+        </template>
+        <template v-slot:buttons>
+          <v-btn
+              class="white--text"
+              color="teal"
+              @click="addSlot()"
+          >
+          {{$locale.home_addSlotButton}}
+          </v-btn>
+        </template>
+      </alert>
+    </v-form>
+  </div>
 </template>
 
 <script>
 import axios from 'axios'
 import TimeSlot from './TimeSlot.vue'
 import Alert from './Alert.vue'
+import LoginInfo from './LoginInfo'
 
 export default {
   components: {
     TimeSlot,
-    Alert
+    Alert,
+    LoginInfo
   },
   data () {
     return {
@@ -146,6 +151,13 @@ export default {
     }
   },
   computed: {
+    userInfo () {
+      return {
+        email: this.email,
+        link: this.link,
+        isAdmin: this.isAdmin
+      }
+    },
     customAttrs () {
       return { email: this.email }
     },

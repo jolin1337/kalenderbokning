@@ -1,1 +1,1 @@
-foo@bar.se
+foo@bar.se,pwd

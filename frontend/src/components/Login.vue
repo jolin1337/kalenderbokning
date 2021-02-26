@@ -4,6 +4,14 @@
       <v-row>
         <v-col>
           <h1>{{ $locale.login_title }}</h1>
+          <v-alert
+            border="top"
+            color="red lighten-2"
+            type="error"
+            v-if="error"
+          >
+            {{error}}
+          </v-alert>
           <v-text-field
             v-model="email"
             :rules="emailRules"
@@ -43,6 +51,7 @@ export default {
   data () {
     return {
       valid: false,
+      error: false,
       email: '',
       password: '',
       emailRules: [
@@ -69,8 +78,11 @@ export default {
         bodyFormData.append('action', 'login')
         axios
           .post(this.url, bodyFormData)
-          .then(() => {
-            this.$router.push('/')
+          .then(resp => {
+            if (!resp.data.error) this.$router.push('/')
+            else {
+              this.error = resp.data.error
+            }
           })
           .catch((e) => {
             console.error(e)
