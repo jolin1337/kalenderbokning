@@ -37,7 +37,7 @@ function get_users() {
     $emails = array_map(function($user) {
         $user_parts = explode(',', $user);
         return [
-            'email' => $user_parts[0],
+            'email' => trim($user_parts[0]),
             'link' => ''
         ];
     }, $emails_str);
@@ -50,9 +50,9 @@ function get_timeslots() {
     $timeslots = array_map(function ($slot) {
             $els = explode(',', $slot);
             return [
-                'time' => $els[0],
-                'email' => $els[1],
-                'link' => $els[2]
+                'time' => trim($els[0]),
+                'email' => trim($els[1]),
+                'link' => trim($els[2])
             ];
         },
         $timeslots_str
@@ -88,8 +88,8 @@ function get_admins() {
     return array_map(function($user) {
         $user_arr = explode(',', $user);
         return [
-            'email' => $user_arr[0],
-            'password' => $user_arr[1]
+            'email' => trim($user_arr[0]),
+            'password' => trim($user_arr[1])
         ];
     }, $admins);
 }
